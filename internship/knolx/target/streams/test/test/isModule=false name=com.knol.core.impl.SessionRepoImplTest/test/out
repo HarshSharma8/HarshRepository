@@ -1,0 +1,6 @@
+[0m[[0minfo[0m] [0m[32mSessionRepoImplTest:[0m[0m
+[0m[[0minfo[0m] [0m[32m- create() new record: [0m[0m
+[0m[[0minfo[0m] [0m[32m- update() a record: [0m[0m
+[0m[[0minfo[0m] [0m[32m- getSession() from records: [0m[0m
+[0m[[0minfo[0m] [0m[32m- getAllSessions() from records: [0m[0m
+[0m[[0minfo[0m] [0m[32m- delete() a record: [0m[0m

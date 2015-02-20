@@ -1,0 +1,1974 @@
+<html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title id="title">
+          com/knol/core/impl/KnolSessionImpl.scala.html
+        </title>
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css"/>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.18.3/addons/pager/jquery.tablesorter.pager.min.js"></script>
+        <style>
+          table.codegrid { font-family: monospace; font-size: 12px; width: auto!important; }table.statementlist { width: auto!important; font-size: 13px; } table.codegrid td { padding: 0!important; border: 0!important } table td.linenumber { width: 40px!important; } 
+        </style>
+      </head>
+      <body style="font-family: monospace;">
+        <ul class="nav nav-tabs">
+          <li>
+            <a href="#codegrid" data-toggle="tab">Codegrid</a>
+          </li>
+          <li>
+            <a href="#statementlist" data-toggle="tab">Statement List</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane active" id="codegrid">
+            <pre style='font-size: 12pt; font-family: courier;'>1 <span style=''>package com.knol.core.impl
+</span>2 <span style=''>
+</span>3 <span style=''>import com.knol.core._
+</span>4 <span style=''>import com.knol.db.connection._
+</span>5 <span style=''>import java.sql.DriverManager
+</span>6 <span style=''>import java.sql.ResultSet
+</span>7 <span style=''>import com.knol.core.Session
+</span>8 <span style=''>import com.knol.core.SessionRepo
+</span>9 <span style=''>import org.slf4j.LoggerFactory
+</span>10 <span style=''>import scala.collection.mutable.MutableList
+</span>11 <span style=''>import scala.collection.mutable.HashMap
+</span>12 <span style=''>
+</span>13 <span style=''>class KnolSessionImpl extends SessionRepo with DbConnection with KnolSessionRepo {
+</span>14 <span style=''>  val logger = </span><span style='background: #AEF1AE'>LoggerFactory.getLogger(this.getClass)</span><span style=''>
+</span>15 <span style=''>
+</span>16 <span style=''>  /**
+</span>17 <span style=''>   * create() method is used to insert a new record
+</span>18 <span style=''>   * every time in table: KnolSessions
+</span>19 <span style=''>   * arguments are passed as:
+</span>20 <span style=''>   * session: instance of case class Session
+</span>21 <span style=''>   */
+</span>22 <span style=''>
+</span>23 <span style=''>  def create(session: Session): Option[Int] = {
+</span>24 <span style=''>    val connection = </span><span style='background: #AEF1AE'>getConnection()</span><span style=''>
+</span>25 <span style=''>    connection match {
+</span>26 <span style=''>      case Some(connection) =>
+</span>27 <span style=''>        val statement = </span><span style='background: #AEF1AE'>connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)</span><span style=''>
+</span>28 <span style=''>        </span><span style='background: #AEF1AE'>Some(statement.executeUpdate("insert into KnolSessions(topic,date,id) values('" + session.topic + "','" + session.date + "','" + session.id + "')"))</span><span style=''>
+</span>29 <span style=''>        </span><span style='background: #AEF1AE'>Some(1)</span><span style=''>
+</span>30 <span style=''>
+</span>31 <span style=''>      case None => </span><span style='background: #F0ADAD'>None</span><span style=''>
+</span>32 <span style=''>    }
+</span>33 <span style=''>  }
+</span>34 <span style=''>
+</span>35 <span style=''>  /**
+</span>36 <span style=''>   * update() method is used to update a record
+</span>37 <span style=''>   * every time in table: KnolSessions
+</span>38 <span style=''>   * arguments are passed as:
+</span>39 <span style=''>   * session: instance of case class Session
+</span>40 <span style=''>   */
+</span>41 <span style=''>
+</span>42 <span style=''>  def update(session: Session, id: Int): Option[Int] = {
+</span>43 <span style=''>    val connection = </span><span style='background: #AEF1AE'>getConnection()</span><span style=''>
+</span>44 <span style=''>    connection match {
+</span>45 <span style=''>      case Some(connection) =>
+</span>46 <span style=''>        val statement = </span><span style='background: #AEF1AE'>connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)</span><span style=''>
+</span>47 <span style=''>        </span><span style='background: #AEF1AE'>Some(statement.executeUpdate("update KnolSessions set topic='" + session.topic + "', date='" + session.date + "', id='" + session.id + "' where uid=" + id))</span><span style=''>
+</span>48 <span style=''>        </span><span style='background: #AEF1AE'>Some(1)</span><span style=''>
+</span>49 <span style=''>
+</span>50 <span style=''>      case None => </span><span style='background: #F0ADAD'>None</span><span style=''>
+</span>51 <span style=''>    }
+</span>52 <span style=''>  }
+</span>53 <span style=''>
+</span>54 <span style=''>  /**
+</span>55 <span style=''>   * getSession() method is used to retrieve an existing record
+</span>56 <span style=''>   * every time from table: KnolSessions
+</span>57 <span style=''>   * arguments are passed as:
+</span>58 <span style=''>   * id: A number to search for a specific record
+</span>59 <span style=''>   */
+</span>60 <span style=''>
+</span>61 <span style=''>  def getSession(id: Int): Option[Session] =
+</span>62 <span style=''>    {
+</span>63 <span style=''>      val connection = </span><span style='background: #AEF1AE'>getConnection()</span><span style=''>
+</span>64 <span style=''>      connection match {
+</span>65 <span style=''>        case Some(connection) =>
+</span>66 <span style=''>          var sessionObject: Session = </span><span style='background: #AEF1AE'>Session("", "", 0)</span><span style=''>
+</span>67 <span style=''>          val statement = </span><span style='background: #AEF1AE'>connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)</span><span style=''>
+</span>68 <span style=''>          val resultSet: ResultSet = </span><span style='background: #AEF1AE'>statement.executeQuery("select * from KnolSessions where uid=" + id)</span><span style=''>
+</span>69 <span style=''>          while (</span><span style='background: #AEF1AE'>resultSet.next()</span><span style=''>) {
+</span>70 <span style=''>            </span><span style='background: #F0ADAD'>sessionObject = Session(resultSet.getString(2), resultSet.getString(3), resultSet.getInt(4))</span><span style=''>;
+</span>71 <span style=''>          }
+</span>72 <span style=''>          </span><span style='background: #AEF1AE'>Some(sessionObject)</span><span style=''>
+</span>73 <span style=''>
+</span>74 <span style=''>        case None => </span><span style='background: #F0ADAD'>None</span><span style=''>
+</span>75 <span style=''>      }
+</span>76 <span style=''>    }
+</span>77 <span style=''>
+</span>78 <span style=''>  /**
+</span>79 <span style=''>   * getAllSessions() method is used to retrieve all records from table KnolSessions
+</span>80 <span style=''>   */
+</span>81 <span style=''>
+</span>82 <span style=''>  def getAllSessions(): Option[Map[Int, Session]] = {
+</span>83 <span style=''>    val connection = </span><span style='background: #AEF1AE'>getConnection()</span><span style=''>
+</span>84 <span style=''>    connection match {
+</span>85 <span style=''>      case Some(connection) =>
+</span>86 <span style=''>        var sessionMap: Map[Int, Session] = </span><span style='background: #AEF1AE'>Map()</span><span style=''>
+</span>87 <span style=''>        val list = </span><span style='background: #AEF1AE'>scala.collection.mutable.MutableList[Session]()</span><span style=''>
+</span>88 <span style=''>        val statement = </span><span style='background: #AEF1AE'>connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)</span><span style=''>
+</span>89 <span style=''>        val resultSet: ResultSet = </span><span style='background: #AEF1AE'>statement.executeQuery("SELECT * FROM KnolSessions")</span><span style=''>
+</span>90 <span style=''>        var count = </span><span style='background: #AEF1AE'>1</span><span style=''>
+</span>91 <span style=''>        while (</span><span style='background: #AEF1AE'>resultSet.next()</span><span style=''>) </span><span style='background: #F0ADAD'>{
+</span>92 <span style=''></span><span style='background: #F0ADAD'>          var sessionData = Session("", "", 0)
+</span>93 <span style=''></span><span style='background: #F0ADAD'>          sessionData = Session(resultSet.getString("topic"), resultSet.getString("date"), resultSet.getInt("id"));
+</span>94 <span style=''></span><span style='background: #F0ADAD'>          sessionMap += (count -> sessionData)
+</span>95 <span style=''></span><span style='background: #F0ADAD'>          count += 1
+</span>96 <span style=''></span><span style='background: #F0ADAD'>        }</span><span style=''>
+</span>97 <span style=''>        </span><span style='background: #AEF1AE'>Some(sessionMap)</span><span style=''>
+</span>98 <span style=''>
+</span>99 <span style=''>      case None => </span><span style='background: #F0ADAD'>None</span><span style=''>
+</span>100 <span style=''>    }
+</span>101 <span style=''>  }
+</span>102 <span style=''>
+</span>103 <span style=''>  /**
+</span>104 <span style=''>   * getSessionsById() method is used to retrieve record(s) as sessions of a particular staff member
+</span>105 <span style=''>   * by joining the two tables KnolSessions and KnolStaff
+</span>106 <span style=''>   * arguments are passed as:
+</span>107 <span style=''>   * id: A number as KnolStaff to join a numerous records
+</span>108 <span style=''>   */
+</span>109 <span style=''>
+</span>110 <span style=''>  def getSessionsById(id: Int): Option[Map[Int, SessionRecord]] = {
+</span>111 <span style=''>    val connection = </span><span style='background: #AEF1AE'>getConnection()</span><span style=''>
+</span>112 <span style=''>    connection match {
+</span>113 <span style=''>      case Some(connection) =>
+</span>114 <span style=''>        var sessionMap: Map[Int, SessionRecord] = </span><span style='background: #AEF1AE'>Map()</span><span style=''>
+</span>115 <span style=''>        val list = </span><span style='background: #AEF1AE'>scala.collection.mutable.MutableList[SessionRecord]()</span><span style=''>
+</span>116 <span style=''>        val statement = </span><span style='background: #AEF1AE'>connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)</span><span style=''>
+</span>117 <span style=''>        val resultSet: ResultSet = </span><span style='background: #AEF1AE'>statement.executeQuery("SELECT KnolStaff.name, KnolStaff.email, KnolStaff.contact, KnolSessions.topic, KnolSessions.date FROM KnolStaff, KnolSessions WHERE KnolStaff.id = KnolSessions.id AND KnolStaff.id=" + id)</span><span style=''>
+</span>118 <span style=''>        var count = </span><span style='background: #AEF1AE'>1</span><span style=''>
+</span>119 <span style=''>        while (</span><span style='background: #AEF1AE'>resultSet.next()</span><span style=''>) </span><span style='background: #AEF1AE'>{
+</span>120 <span style=''></span><span style='background: #AEF1AE'>          var sessionData: SessionRecord = SessionRecord("", "", "", "", "")
+</span>121 <span style=''></span><span style='background: #AEF1AE'>          sessionData = SessionRecord(resultSet.getString("name"), resultSet.getString("email"), resultSet.getString("contact"), resultSet.getString("topic"), resultSet.getString("date"));
+</span>122 <span style=''></span><span style='background: #AEF1AE'>          sessionMap += (count -> sessionData)
+</span>123 <span style=''></span><span style='background: #AEF1AE'>          count += 1
+</span>124 <span style=''></span><span style='background: #AEF1AE'>        }</span><span style=''>
+</span>125 <span style=''>        </span><span style='background: #AEF1AE'>Some(sessionMap)</span><span style=''>
+</span>126 <span style=''>
+</span>127 <span style=''>      case None => </span><span style='background: #F0ADAD'>None</span><span style=''>
+</span>128 <span style=''>    }
+</span>129 <span style=''>  }
+</span>130 <span style=''>
+</span>131 <span style=''>  /**
+</span>132 <span style=''>   * delete() method is used to delete an existing record
+</span>133 <span style=''>   * every time from table: KnolSessions
+</span>134 <span style=''>   * arguments are passed as:
+</span>135 <span style=''>   * id: A number to search for a specific record
+</span>136 <span style=''>   */
+</span>137 <span style=''>
+</span>138 <span style=''>  def delete(id: Int): Option[Int] = {
+</span>139 <span style=''>    val connection = </span><span style='background: #AEF1AE'>getConnection()</span><span style=''>
+</span>140 <span style=''>    connection match {
+</span>141 <span style=''>      case Some(connection) =>
+</span>142 <span style=''>        val statement = </span><span style='background: #AEF1AE'>connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)</span><span style=''>
+</span>143 <span style=''>        </span><span style='background: #AEF1AE'>Some(statement.executeUpdate("delete from KnolSessions where uid=" + id))</span><span style=''>
+</span>144 <span style=''>        </span><span style='background: #AEF1AE'>Some(1)</span><span style=''>
+</span>145 <span style=''>
+</span>146 <span style=''>      case None => </span><span style='background: #F0ADAD'>None</span><span style=''>
+</span>147 <span style=''>    }
+</span>148 <span style=''>  }
+</span>149 <span style=''>}
+</span></pre>
+          </div>
+          <div class="tab-pane" id="statementlist">
+            <table cellspacing="0" cellpadding="0" class="table statementlist">
+      <tr>
+        <th>Line</th>
+        <th>Stmt Id</th>
+        <th>Pos</th>
+        <th>Tree</th>
+        <th>Symbol</th>
+        <th>Code</th>
+      </tr><tr>
+        <td>
+          14
+        </td>
+        <td>
+          62
+        </td>
+        <td>
+          415
+          -
+          453
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          org.slf4j.LoggerFactory.getLogger
+        </td>
+        <td style="background: #AEF1AE">
+          org.slf4j.LoggerFactory.getLogger(this.getClass())
+        </td>
+      </tr><tr>
+        <td>
+          14
+        </td>
+        <td>
+          61
+        </td>
+        <td>
+          439
+          -
+          452
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.lang.Object.getClass
+        </td>
+        <td style="background: #AEF1AE">
+          this.getClass()
+        </td>
+      </tr><tr>
+        <td>
+          24
+        </td>
+        <td>
+          63
+        </td>
+        <td>
+          703
+          -
+          718
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.db.connection.DbConnection.getConnection
+        </td>
+        <td style="background: #AEF1AE">
+          KnolSessionImpl.this.getConnection()
+        </td>
+      </tr><tr>
+        <td>
+          27
+        </td>
+        <td>
+          64
+        </td>
+        <td>
+          797
+          -
+          884
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Connection.createStatement
+        </td>
+        <td style="background: #AEF1AE">
+          connection.createStatement(1005, 1008)
+        </td>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          65
+        </td>
+        <td>
+          922
+          -
+          1039
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.lang.String.+
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;insert into KnolSessions(topic,date,id) values(\'&quot;.+(session.topic).+(&quot;\',\'&quot;).+(session.date).+(&quot;\',\'&quot;).+(session.id).+(&quot;\')&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          67
+        </td>
+        <td>
+          893
+          -
+          1041
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Int](statement.executeUpdate(&quot;insert into KnolSessions(topic,date,id) values(\'&quot;.+(session.topic).+(&quot;\',\'&quot;).+(session.date).+(&quot;\',\'&quot;).+(session.id).+(&quot;\')&quot;)))
+        </td>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          66
+        </td>
+        <td>
+          898
+          -
+          1040
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Statement.executeUpdate
+        </td>
+        <td style="background: #AEF1AE">
+          statement.executeUpdate(&quot;insert into KnolSessions(topic,date,id) values(\'&quot;.+(session.topic).+(&quot;\',\'&quot;).+(session.date).+(&quot;\',\'&quot;).+(session.id).+(&quot;\')&quot;))
+        </td>
+      </tr><tr>
+        <td>
+          29
+        </td>
+        <td>
+          68
+        </td>
+        <td>
+          1050
+          -
+          1057
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Int](1)
+        </td>
+      </tr><tr>
+        <td>
+          31
+        </td>
+        <td>
+          69
+        </td>
+        <td>
+          1078
+          -
+          1082
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #F0ADAD">
+          scala.None
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          70
+        </td>
+        <td>
+          1347
+          -
+          1362
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.db.connection.DbConnection.getConnection
+        </td>
+        <td style="background: #AEF1AE">
+          KnolSessionImpl.this.getConnection()
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          71
+        </td>
+        <td>
+          1441
+          -
+          1528
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Connection.createStatement
+        </td>
+        <td style="background: #AEF1AE">
+          connection.createStatement(1005, 1008)
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          74
+        </td>
+        <td>
+          1537
+          -
+          1693
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Int](statement.executeUpdate(&quot;update KnolSessions set topic=\'&quot;.+(session.topic).+(&quot;\', date=\'&quot;).+(session.date).+(&quot;\', id=\'&quot;).+(session.id).+(&quot;\' where uid=&quot;).+(id)))
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          73
+        </td>
+        <td>
+          1542
+          -
+          1692
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Statement.executeUpdate
+        </td>
+        <td style="background: #AEF1AE">
+          statement.executeUpdate(&quot;update KnolSessions set topic=\'&quot;.+(session.topic).+(&quot;\', date=\'&quot;).+(session.date).+(&quot;\', id=\'&quot;).+(session.id).+(&quot;\' where uid=&quot;).+(id))
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          72
+        </td>
+        <td>
+          1566
+          -
+          1691
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.lang.String.+
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;update KnolSessions set topic=\'&quot;.+(session.topic).+(&quot;\', date=\'&quot;).+(session.date).+(&quot;\', id=\'&quot;).+(session.id).+(&quot;\' where uid=&quot;).+(id)
+        </td>
+      </tr><tr>
+        <td>
+          48
+        </td>
+        <td>
+          75
+        </td>
+        <td>
+          1702
+          -
+          1709
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Int](1)
+        </td>
+      </tr><tr>
+        <td>
+          50
+        </td>
+        <td>
+          76
+        </td>
+        <td>
+          1730
+          -
+          1734
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #F0ADAD">
+          scala.None
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          77
+        </td>
+        <td>
+          2018
+          -
+          2033
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.db.connection.DbConnection.getConnection
+        </td>
+        <td style="background: #AEF1AE">
+          KnolSessionImpl.this.getConnection()
+        </td>
+      </tr><tr>
+        <td>
+          66
+        </td>
+        <td>
+          78
+        </td>
+        <td>
+          2131
+          -
+          2149
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.Session.apply
+        </td>
+        <td style="background: #AEF1AE">
+          com.knol.core.Session.apply(&quot;&quot;, &quot;&quot;, 0)
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          79
+        </td>
+        <td>
+          2176
+          -
+          2263
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Connection.createStatement
+        </td>
+        <td style="background: #AEF1AE">
+          connection.createStatement(1005, 1008)
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          80
+        </td>
+        <td>
+          2324
+          -
+          2368
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.lang.String.+
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;select * from KnolSessions where uid=&quot;.+(id)
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          81
+        </td>
+        <td>
+          2301
+          -
+          2369
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Statement.executeQuery
+        </td>
+        <td style="background: #AEF1AE">
+          statement.executeQuery(&quot;select * from KnolSessions where uid=&quot;.+(id))
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          89
+        </td>
+        <td>
+          2380
+          -
+          2380
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          ()
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          82
+        </td>
+        <td>
+          2387
+          -
+          2403
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.next
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.next()
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          88
+        </td>
+        <td>
+          2419
+          -
+          2511
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          {
+  sessionObject = com.knol.core.Session.apply(resultSet.getString(2), resultSet.getString(3), resultSet.getInt(4));
+  while$1()
+}
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          90
+        </td>
+        <td>
+          2380
+          -
+          2380
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          ()
+        </td>
+      </tr><tr>
+        <td>
+          70
+        </td>
+        <td>
+          83
+        </td>
+        <td>
+          2443
+          -
+          2465
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #F0ADAD">
+          resultSet.getString(2)
+        </td>
+      </tr><tr>
+        <td>
+          70
+        </td>
+        <td>
+          86
+        </td>
+        <td>
+          2435
+          -
+          2511
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.Session.apply
+        </td>
+        <td style="background: #F0ADAD">
+          com.knol.core.Session.apply(resultSet.getString(2), resultSet.getString(3), resultSet.getInt(4))
+        </td>
+      </tr><tr>
+        <td>
+          70
+        </td>
+        <td>
+          85
+        </td>
+        <td>
+          2491
+          -
+          2510
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getInt
+        </td>
+        <td style="background: #F0ADAD">
+          resultSet.getInt(4)
+        </td>
+      </tr><tr>
+        <td>
+          70
+        </td>
+        <td>
+          87
+        </td>
+        <td>
+          2433
+          -
+          2433
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.impl.KnolSessionImpl.while$1
+        </td>
+        <td style="background: #F0ADAD">
+          while$1()
+        </td>
+      </tr><tr>
+        <td>
+          70
+        </td>
+        <td>
+          84
+        </td>
+        <td>
+          2467
+          -
+          2489
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #F0ADAD">
+          resultSet.getString(3)
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          91
+        </td>
+        <td>
+          2535
+          -
+          2554
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[com.knol.core.Session](sessionObject)
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          92
+        </td>
+        <td>
+          2577
+          -
+          2581
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #F0ADAD">
+          scala.None
+        </td>
+      </tr><tr>
+        <td>
+          83
+        </td>
+        <td>
+          93
+        </td>
+        <td>
+          2770
+          -
+          2785
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.db.connection.DbConnection.getConnection
+        </td>
+        <td style="background: #AEF1AE">
+          KnolSessionImpl.this.getConnection()
+        </td>
+      </tr><tr>
+        <td>
+          86
+        </td>
+        <td>
+          94
+        </td>
+        <td>
+          2884
+          -
+          2889
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.generic.GenMapFactory.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.Map.apply[Int, Nothing]()
+        </td>
+      </tr><tr>
+        <td>
+          87
+        </td>
+        <td>
+          95
+        </td>
+        <td>
+          2909
+          -
+          2956
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.generic.GenericCompanion.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.MutableList.apply[com.knol.core.Session]()
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          96
+        </td>
+        <td>
+          2981
+          -
+          3068
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Connection.createStatement
+        </td>
+        <td style="background: #AEF1AE">
+          connection.createStatement(1005, 1008)
+        </td>
+      </tr><tr>
+        <td>
+          89
+        </td>
+        <td>
+          97
+        </td>
+        <td>
+          3104
+          -
+          3156
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Statement.executeQuery
+        </td>
+        <td style="background: #AEF1AE">
+          statement.executeQuery(&quot;SELECT * FROM KnolSessions&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          90
+        </td>
+        <td>
+          98
+        </td>
+        <td>
+          3177
+          -
+          3178
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          1
+        </td>
+      </tr><tr>
+        <td>
+          91
+        </td>
+        <td>
+          110
+        </td>
+        <td>
+          3187
+          -
+          3187
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          ()
+        </td>
+      </tr><tr>
+        <td>
+          91
+        </td>
+        <td>
+          109
+        </td>
+        <td>
+          3212
+          -
+          3454
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          {
+  {
+    var sessionData: com.knol.core.Session = com.knol.core.Session.apply(&quot;&quot;, &quot;&quot;, 0);
+    sessionData = com.knol.core.Session.apply(resultSet.getString(&quot;topic&quot;), resultSet.getString(&quot;date&quot;), resultSet.getInt(&quot;id&quot;));
+    sessionMap = sessionMap.+[com.knol.core.Session](scala.this.Predef.ArrowAssoc[Int](count).-&gt;[com.knol.core.Session](sessionData));
+    count = count.+(1)
+  };
+  while$2()
+}
+        </td>
+      </tr><tr>
+        <td>
+          91
+        </td>
+        <td>
+          99
+        </td>
+        <td>
+          3194
+          -
+          3210
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.next
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.next()
+        </td>
+      </tr><tr>
+        <td>
+          91
+        </td>
+        <td>
+          108
+        </td>
+        <td>
+          3212
+          -
+          3212
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.impl.KnolSessionImpl.while$2
+        </td>
+        <td style="background: #F0ADAD">
+          while$2()
+        </td>
+      </tr><tr>
+        <td>
+          91
+        </td>
+        <td>
+          111
+        </td>
+        <td>
+          3187
+          -
+          3187
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          ()
+        </td>
+      </tr><tr>
+        <td>
+          92
+        </td>
+        <td>
+          100
+        </td>
+        <td>
+          3242
+          -
+          3260
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.Session.apply
+        </td>
+        <td style="background: #F0ADAD">
+          com.knol.core.Session.apply(&quot;&quot;, &quot;&quot;, 0)
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          101
+        </td>
+        <td>
+          3293
+          -
+          3321
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #F0ADAD">
+          resultSet.getString(&quot;topic&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          104
+        </td>
+        <td>
+          3285
+          -
+          3375
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.Session.apply
+        </td>
+        <td style="background: #F0ADAD">
+          com.knol.core.Session.apply(resultSet.getString(&quot;topic&quot;), resultSet.getString(&quot;date&quot;), resultSet.getInt(&quot;id&quot;))
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          103
+        </td>
+        <td>
+          3352
+          -
+          3374
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getInt
+        </td>
+        <td style="background: #F0ADAD">
+          resultSet.getInt(&quot;id&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          102
+        </td>
+        <td>
+          3323
+          -
+          3350
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #F0ADAD">
+          resultSet.getString(&quot;date&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          94
+        </td>
+        <td>
+          106
+        </td>
+        <td>
+          3387
+          -
+          3423
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.immutable.Map.+
+        </td>
+        <td style="background: #F0ADAD">
+          sessionMap.+[com.knol.core.Session](scala.this.Predef.ArrowAssoc[Int](count).-&gt;[com.knol.core.Session](sessionData))
+        </td>
+      </tr><tr>
+        <td>
+          94
+        </td>
+        <td>
+          105
+        </td>
+        <td>
+          3402
+          -
+          3422
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          scala.this.Predef.ArrowAssoc[Int](count).-&gt;[com.knol.core.Session](sessionData)
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          107
+        </td>
+        <td>
+          3434
+          -
+          3444
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Int.+
+        </td>
+        <td style="background: #F0ADAD">
+          count.+(1)
+        </td>
+      </tr><tr>
+        <td>
+          97
+        </td>
+        <td>
+          112
+        </td>
+        <td>
+          3463
+          -
+          3479
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Map[Int,com.knol.core.Session]](sessionMap)
+        </td>
+      </tr><tr>
+        <td>
+          99
+        </td>
+        <td>
+          113
+        </td>
+        <td>
+          3500
+          -
+          3504
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #F0ADAD">
+          scala.None
+        </td>
+      </tr><tr>
+        <td>
+          111
+        </td>
+        <td>
+          114
+        </td>
+        <td>
+          3865
+          -
+          3880
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.db.connection.DbConnection.getConnection
+        </td>
+        <td style="background: #AEF1AE">
+          KnolSessionImpl.this.getConnection()
+        </td>
+      </tr><tr>
+        <td>
+          114
+        </td>
+        <td>
+          115
+        </td>
+        <td>
+          3985
+          -
+          3990
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.generic.GenMapFactory.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.Map.apply[Int, Nothing]()
+        </td>
+      </tr><tr>
+        <td>
+          115
+        </td>
+        <td>
+          116
+        </td>
+        <td>
+          4010
+          -
+          4063
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.generic.GenericCompanion.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.MutableList.apply[com.knol.core.SessionRecord]()
+        </td>
+      </tr><tr>
+        <td>
+          116
+        </td>
+        <td>
+          117
+        </td>
+        <td>
+          4088
+          -
+          4175
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Connection.createStatement
+        </td>
+        <td style="background: #AEF1AE">
+          connection.createStatement(1005, 1008)
+        </td>
+      </tr><tr>
+        <td>
+          117
+        </td>
+        <td>
+          119
+        </td>
+        <td>
+          4211
+          -
+          4422
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Statement.executeQuery
+        </td>
+        <td style="background: #AEF1AE">
+          statement.executeQuery(&quot;SELECT KnolStaff.name, KnolStaff.email, KnolStaff.contact, KnolSessions.topic, KnolSessions.date FROM KnolStaff, KnolSessions WHERE KnolStaff.id = KnolSessions.id AND KnolStaff.id=&quot;.+(id))
+        </td>
+      </tr><tr>
+        <td>
+          117
+        </td>
+        <td>
+          118
+        </td>
+        <td>
+          4234
+          -
+          4421
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.lang.String.+
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;SELECT KnolStaff.name, KnolStaff.email, KnolStaff.contact, KnolSessions.topic, KnolSessions.date FROM KnolStaff, KnolSessions WHERE KnolStaff.id = KnolSessions.id AND KnolStaff.id=&quot;.+(id)
+        </td>
+      </tr><tr>
+        <td>
+          118
+        </td>
+        <td>
+          120
+        </td>
+        <td>
+          4443
+          -
+          4444
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          1
+        </td>
+      </tr><tr>
+        <td>
+          119
+        </td>
+        <td>
+          134
+        </td>
+        <td>
+          4453
+          -
+          4453
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          ()
+        </td>
+      </tr><tr>
+        <td>
+          119
+        </td>
+        <td>
+          133
+        </td>
+        <td>
+          4478
+          -
+          4823
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          {
+  {
+    var sessionData: com.knol.core.SessionRecord = com.knol.core.SessionRecord.apply(&quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;);
+    sessionData = com.knol.core.SessionRecord.apply(resultSet.getString(&quot;name&quot;), resultSet.getString(&quot;email&quot;), resultSet.getString(&quot;contact&quot;), resultSet.getString(&quot;topic&quot;), resultSet.getString(&quot;date&quot;));
+    sessionMap = sessionMap.+[com.knol.core.SessionRecord](scala.this.Predef.ArrowAssoc[Int](count).-&gt;[com.knol.core.SessionRecord](sessionData));
+    count = count.+(1)
+  };
+  while$3()
+}
+        </td>
+      </tr><tr>
+        <td>
+          119
+        </td>
+        <td>
+          121
+        </td>
+        <td>
+          4460
+          -
+          4476
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.next
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.next()
+        </td>
+      </tr><tr>
+        <td>
+          119
+        </td>
+        <td>
+          132
+        </td>
+        <td>
+          4478
+          -
+          4478
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.impl.KnolSessionImpl.while$3
+        </td>
+        <td style="background: #AEF1AE">
+          while$3()
+        </td>
+      </tr><tr>
+        <td>
+          119
+        </td>
+        <td>
+          135
+        </td>
+        <td>
+          4453
+          -
+          4453
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          ()
+        </td>
+      </tr><tr>
+        <td>
+          120
+        </td>
+        <td>
+          122
+        </td>
+        <td>
+          4523
+          -
+          4556
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.SessionRecord.apply
+        </td>
+        <td style="background: #AEF1AE">
+          com.knol.core.SessionRecord.apply(&quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          128
+        </td>
+        <td>
+          4581
+          -
+          4744
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.core.SessionRecord.apply
+        </td>
+        <td style="background: #AEF1AE">
+          com.knol.core.SessionRecord.apply(resultSet.getString(&quot;name&quot;), resultSet.getString(&quot;email&quot;), resultSet.getString(&quot;contact&quot;), resultSet.getString(&quot;topic&quot;), resultSet.getString(&quot;date&quot;))
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          125
+        </td>
+        <td>
+          4654
+          -
+          4684
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.getString(&quot;contact&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          124
+        </td>
+        <td>
+          4624
+          -
+          4652
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.getString(&quot;email&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          127
+        </td>
+        <td>
+          4716
+          -
+          4743
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.getString(&quot;date&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          123
+        </td>
+        <td>
+          4595
+          -
+          4622
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.getString(&quot;name&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          126
+        </td>
+        <td>
+          4686
+          -
+          4714
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.ResultSet.getString
+        </td>
+        <td style="background: #AEF1AE">
+          resultSet.getString(&quot;topic&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          130
+        </td>
+        <td>
+          4756
+          -
+          4792
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.immutable.Map.+
+        </td>
+        <td style="background: #AEF1AE">
+          sessionMap.+[com.knol.core.SessionRecord](scala.this.Predef.ArrowAssoc[Int](count).-&gt;[com.knol.core.SessionRecord](sessionData))
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          129
+        </td>
+        <td>
+          4771
+          -
+          4791
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[Int](count).-&gt;[com.knol.core.SessionRecord](sessionData)
+        </td>
+      </tr><tr>
+        <td>
+          123
+        </td>
+        <td>
+          131
+        </td>
+        <td>
+          4803
+          -
+          4813
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Int.+
+        </td>
+        <td style="background: #AEF1AE">
+          count.+(1)
+        </td>
+      </tr><tr>
+        <td>
+          125
+        </td>
+        <td>
+          136
+        </td>
+        <td>
+          4832
+          -
+          4848
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Map[Int,com.knol.core.SessionRecord]](sessionMap)
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          137
+        </td>
+        <td>
+          4869
+          -
+          4873
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #F0ADAD">
+          scala.None
+        </td>
+      </tr><tr>
+        <td>
+          139
+        </td>
+        <td>
+          138
+        </td>
+        <td>
+          5137
+          -
+          5152
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          com.knol.db.connection.DbConnection.getConnection
+        </td>
+        <td style="background: #AEF1AE">
+          KnolSessionImpl.this.getConnection()
+        </td>
+      </tr><tr>
+        <td>
+          142
+        </td>
+        <td>
+          139
+        </td>
+        <td>
+          5231
+          -
+          5318
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Connection.createStatement
+        </td>
+        <td style="background: #AEF1AE">
+          connection.createStatement(1005, 1008)
+        </td>
+      </tr><tr>
+        <td>
+          143
+        </td>
+        <td>
+          140
+        </td>
+        <td>
+          5356
+          -
+          5398
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.lang.String.+
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;delete from KnolSessions where uid=&quot;.+(id)
+        </td>
+      </tr><tr>
+        <td>
+          143
+        </td>
+        <td>
+          142
+        </td>
+        <td>
+          5327
+          -
+          5400
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Int](statement.executeUpdate(&quot;delete from KnolSessions where uid=&quot;.+(id)))
+        </td>
+      </tr><tr>
+        <td>
+          143
+        </td>
+        <td>
+          141
+        </td>
+        <td>
+          5332
+          -
+          5399
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.sql.Statement.executeUpdate
+        </td>
+        <td style="background: #AEF1AE">
+          statement.executeUpdate(&quot;delete from KnolSessions where uid=&quot;.+(id))
+        </td>
+      </tr><tr>
+        <td>
+          144
+        </td>
+        <td>
+          143
+        </td>
+        <td>
+          5409
+          -
+          5416
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Int](1)
+        </td>
+      </tr><tr>
+        <td>
+          146
+        </td>
+        <td>
+          144
+        </td>
+        <td>
+          5437
+          -
+          5441
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #F0ADAD">
+          scala.None
+        </td>
+      </tr>
+    </table>
+          </div>
+        </div>
+      </body>
+    </html>
