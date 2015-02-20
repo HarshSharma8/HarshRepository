@@ -1,0 +1,6 @@
+[0m[[0minfo[0m] [0m[32mCollegeTest:[0m[0m
+[0m[[0minfo[0m] [0m[32m- insert() of collegeRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- update() of collegeRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- getCollege() of collegeRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- getAllColleges() of collegeRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- delete() of collegeRepoImpl[0m[0m

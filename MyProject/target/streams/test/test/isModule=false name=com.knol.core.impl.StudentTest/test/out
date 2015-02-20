@@ -1,0 +1,6 @@
+[0m[[0minfo[0m] [0m[32mStudentTest:[0m[0m
+[0m[[0minfo[0m] [0m[32m- insert() of StudentRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- update() of StudentRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- getStudent() of StudentRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- getAllStudents() of studentRepoImpl[0m[0m
+[0m[[0minfo[0m] [0m[32m- delete() of studentRepoImpl[0m[0m
